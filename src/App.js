@@ -4,12 +4,15 @@ import { Board, Ship } from './components';
 import { getrandomNumber } from './helpers/randomNumberHelper';
 
 function App() {
-  const [top, setTop] = useState(parseInt(localStorage.getItem('top')) || 700 );
-  const [left, setLeft] = useState(parseInt(localStorage.getItem('left')) || 0);
+
   const [turn, setTurn] = useState(0);
+
+  console.log('heeyy')
 
   const nuOfRows = 8;
   const nuOfCols = 8;
+  const numOfShips = 3;
+
 
   const memeZoneGenerator = () => {
     const min = 2;
@@ -20,49 +23,22 @@ function App() {
   const memeArray = JSON.parse(localStorage.getItem('memeArray')) || memeZoneGenerator();
 
   useEffect(()=>{
-     localStorage.setItem('top', top);
-     localStorage.setItem('left', left);
-     localStorage.setItem('memeArray', JSON.stringify(memeArray));
-  },[top, left, memeArray]);
+    localStorage.setItem('memeArray', JSON.stringify(memeArray));
+  },[JSON.stringify(memeArray)]);
 
   const gettheTurn = () => {
     return getrandomNumber(1, 6);
-  }
-
-  const navigateToThePoint = (val) => {
-    // get the current position
-    const y = (nuOfRows * 100 - top) / 100;
-    const x = ( left + 100 ) / 100;
-    
-    // if on a odd row
-    if(y%2) {
-      if(x + val <= nuOfCols) {
-        setLeft(left + val*100);
-      } else {
-        setTop(top - 100);
-        setLeft((nuOfCols - ( x + val - nuOfCols )) * 100);
-      }
-    } else {
-      // if on a even row
-      if(val < x) {
-        setLeft(left - val*100);
-      } else {
-        setTop(top - 100);
-        setLeft((val - x) * 100);
-      }
-    }
   }
 
   return (
     <div>
       <main>
         <Board nuOfRows={nuOfRows} nuOfCols={nuOfCols} memeArray={memeArray}>
-          <Ship top={top} left={left} />
+          {/* {[...Array(numOfShips)].map((val, index) =>   <Ship nuOfRows={nuOfRows} nuOfCols={nuOfCols} turn={{val:turn}} index={index} /> )} */}
         </Board>
 
         <button onClick={() => {
           const newTurn = gettheTurn();
-          navigateToThePoint(newTurn);
           setTurn(newTurn);
         }}>here</button>
         <span>{turn}</span>

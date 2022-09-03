@@ -16,7 +16,7 @@ import tweleve from '../assets/memes/12.jpg';
 
 const memes = [one, two, three, four, five, six, seven, eight, nine, ten, eleven, tweleve];
 
-function Board({nuOfRows, nuOfCols, memeArray,  children}) {
+const Board = React.memo(function({nuOfRows, nuOfCols, memeArray,  children}) {
 
     let zones = [];
 
@@ -55,6 +55,6 @@ function Board({nuOfRows, nuOfCols, memeArray,  children}) {
             {children}
         </div>
     )
-}
+});
 
 export default Board;
