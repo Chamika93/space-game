@@ -25,7 +25,7 @@ const Board = React.memo(function({nuOfRows, nuOfCols, memeArray,  children}) {
         for (let j = 0; j < nuOfCols; j++) { 
           const x = i*nuOfCols - j;
           const memeIndex = memeArray.indexOf(x);
-          const meme = !!memeIndex ? memes[memeIndex]  : null; 
+          const meme = memeIndex !== -1 ? memes[memeIndex]  : null;
           col.push(
           <div className='border-2 border-indigo-600' style={ meme ?
             {width: '100%',
@@ -34,7 +34,7 @@ const Board = React.memo(function({nuOfRows, nuOfCols, memeArray,  children}) {
             backgroundPosition: 'center',
             backgroundSize: 'cover',
             backgroundRepeat: 'no-repeat',
-            }: {}}/> );
+            }: {}}>{x}</div> );
         }
         if (i % 2) {
           col.reverse();
