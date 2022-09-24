@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 
 import { Board, Ship } from './components';
-import { getrandomNumber } from './helpers/randomNumberHelper';
+import { gettheTurn } from './helpers/randomNumberHelper';
+import { memeZoneGenerator } from './components/board';
+
+import ship_1 from './assets/ships//space-ship.png';
+import ship_2 from './assets/ships//space-ship-1.png';
+import ship_3 from './assets/ships//space-ship-2.png';
+import ship_4 from './assets/ships//space-ship-3.png';
+import ship_5 from './assets/ships//space-ship-4.png';
+import ship_6 from './assets/ships//space-ship-5.png';
+
+const ships = [ship_1, ship_2, ship_3, ship_4, ship_5, ship_6];
 
 const nuOfRows = 8;
 const nuOfCols = 8;
@@ -9,180 +19,211 @@ const numOfShips = 2;
 
 function App() {
 
-  const [turn, setTurn] = useState(0);
   const [whichShip, setWhichShip] = useState(parseInt(localStorage.getItem('whichShip')) || 0);
-  const [position, setPosition] = useState(JSON.parse(localStorage.getItem('position')) || {0:1, 1:1});
+  const [position, setPosition] = useState(JSON.parse(localStorage.getItem('position')) || {0:1, 1:1}); 
+  const [turnValue, setTurnValue] = useState(null);
+  const memeArray = JSON.parse(localStorage.getItem('memeArray')) || memeZoneGenerator(nuOfRows, nuOfCols);
   let rules = useRef({0:null, 1: null});
-  //('rules', rules);
-  //console.log('position', position);
-
-  const memeZoneGenerator = () => {
-    const min = 2;
-    const max = nuOfRows * nuOfCols - 1;
-    const memeZones = [];
-
-    do {
-      let rand = getrandomNumber(min, max);
-      if(memeZones.indexOf(rand)===-1) {
-        memeZones.push(rand)
-      }
-    } while (memeZones.length < 12);
-
-    return memeZones;
-  }
-
-  const memeArray = JSON.parse(localStorage.getItem('memeArray')) || memeZoneGenerator();
-  //console.log(memeArray);
 
   useEffect(()=>{
     localStorage.setItem('memeArray', JSON.stringify(memeArray));
     localStorage.setItem('whichShip', whichShip);
   },[memeArray, whichShip]);
 
-  const gettheTurn = () => {
-    return getrandomNumber(1, 6);
-  }
 
   useEffect(()=>{
+    localStorage.setItem('position', JSON.stringify(position));
+  },[position]);
 
-    //console.log(position)
-    for (const [key, value] of Object.entries(position)) {
-      const whichMeme = memeArray.indexOf(value);
-      if(whichMeme !==-1 ){
-        console.log('in a meme zone', rules.current)
-        // if any spaceship in a memezone - do something
-        switch(whichMeme) {
-          case 1:
-            for (let key of Object.keys(rules.current)) {
-              rules.current[key] = 'SKIP_NEXT_TURN';
-            }
-            rules.current = {...rules.current, [key]: 'EXTRA_TURN'};
-            break;
-          case 2:
-          case 4:
-            rules.current = {...rules.current, [key]: 'SKIP_NEXT_TURN'};
-            break;
-          case 5:
-            rules.current = {...rules.current, [key]: 'NEXT_TURN_6'};
-            break;
-          case 6:
-            rules.current = {...rules.current, [key]: 'NEXT_TURN_1'};
-            break;
-          case 7:
-            rules.current = {...rules.current, [key]: 'SKIP_NEXT_2_TURN'};
-            break;
-          case 8:
-            for (let key of Object.keys(rules.current)) {
-              rules.current[key] = 'EXTRA_TURN';
-            }
-            rules.current = {...rules.current, [key]: 'SKIP_NEXT_TURN'};
-            break;
-          case 9:
-            for (let key of Object.keys(rules.current)) {
-              rules.current[key] = 'SKIP_NEXT_TURN';
-            }
-            rules.current = {...rules.current, [key]: 'EXTRA_TURN'};
-            break;
-          case 10:
-            rules.current = {...rules.current, [key]: 'NEED_6'};
-            break;
-          case 11:
-              rules.current = {...rules.current, [key]: 'NO_1'};
-              break
-          default:
-        };
+  const executeTurn = () => {
+
+    let turnVal;
+    // rule checker
+    switch(rules.current[whichShip]) {
+      case 'NEXT_TURN_6':
+        turnVal = 6;
+        rules.current[whichShip] = null;
+        break;
+      case 'NEXT_TURN_1':
+        turnVal = 1;
+        rules.current[whichShip] = null;
+        break;
+      default:
+    };
+
+    const newTurn = turnVal ? turnVal : gettheTurn();
+    console.log(`ship ${whichShip === 0 ? 'grey' : 'yellow'} - turn ${newTurn} - rules - ${rules}`);
+  
+    if(rules.current[whichShip] === 'NEED_6') {
+      rules.current[whichShip] = null;
+      if(newTurn !== 6) {
+        console.log('not a 6 going for next player')
+        return;
       }
     }
 
-    // check meme array
-    localStorage.setItem('position', JSON.stringify(position));
-
-  },[position]);
-
-  const executeTurn = (val) => {
-    let newTurn;
-    if(val!==undefined) {
-      newTurn = val;
-    } else {
-      newTurn = gettheTurn();
+    if(rules.current[whichShip] === 'NO_1') {
+      rules.current[whichShip] = null;
+      if(newTurn === 1) {
+        console.log('It is a 1 going for next player')
+        return;
+      }
     }
 
-    console.log(`${whichShip}-${newTurn}`)
+    setTurnValue(newTurn);
 
-    setTurn(newTurn);
-    setPosition({...position, [whichShip]: position[whichShip]+newTurn})
+    const newPosition = position[whichShip]+newTurn;
+    console.log(`newPosition ${newPosition}`);
+    if(newPosition > 64) {
+      return;
+    }
+
+    setPosition({...position, [whichShip]: newPosition})
+    
+    // execute rules here
+    const whichMeme = memeArray.indexOf(newPosition);
+    if(whichMeme !==-1 ){
+      // if any spaceship in a memezone - do something
+      switch(whichMeme) {
+        case 0:
+          setPosition({...position, [whichShip]: newPosition - newTurn})
+          break;
+        case 1:
+          rules.current = {...rules.current, [whichShip]: 'EXTRA_TURN'};
+          break;
+        case 3:
+          setPosition({...position, [whichShip]: position[whichShip]+ 8});
+          break;
+        case 2:
+        case 4:
+          rules.current = {...rules.current, [whichShip]: 'SKIP_NEXT_TURN'};
+          break;
+        case 5:
+          rules.current = {...rules.current, [whichShip]: 'NEXT_TURN_6'};
+          break;
+        case 6:
+          rules.current = {...rules.current, [whichShip]: 'NEXT_TURN_1'};
+          break;
+        case 7:
+          rules.current = {...rules.current, [whichShip]: 'SKIP_NEXT_2_TURN'};
+          break;
+        case 8:
+          for (let key of Object.keys(rules.current)) {
+            rules.current[key] = 'EXTRA_TURN';
+          }
+          rules.current = {...rules.current, [whichShip]: 'SKIP_NEXT_TURN'};
+          break;
+        case 9:
+          setWhichShip(whichShip - 1);
+          break;
+        case 10:
+          rules.current = {...rules.current, [whichShip]: 'NEED_6'};
+          break;
+        case 11:
+            rules.current = {...rules.current, [whichShip]: 'NO_1'};
+            break
+        default:
+      };
+    }
+  }
+
+  const getNextShip = (ship) => {
+    const nextship = (ship === numOfShips-1 ) ? 0 : ship + 1;
+    return nextship;
   }
 
   const updateShip = () => {
-    if(whichShip < numOfShips-1) {
-      setWhichShip(whichShip + 1);
+    console.log('rules', rules.current);
+
+    if(rules.current[whichShip] === 'EXTRA_TURN'){
+      rules.current[whichShip] = null;
     } else {
-      setWhichShip(0);
+
+      let nextship = getNextShip(whichShip);
+
+      console.log('here next ship', nextship)
+ 
+      switch(rules.current[nextship]) {
+        case 'SKIP_NEXT_TURN':
+          console.log('skip turn')
+          rules.current[nextship] = null;
+          nextship = getNextShip(nextship);
+          break;
+
+        case 'SKIP_NEXT_2_TURN':
+            nextship = getNextShip(nextship);
+            rules.current[nextship] = 'SKIP_NEXT_TURN';
+            break;
+
+        default:
+       
+      };
+      setWhichShip(nextship);
     }
+ 
   }
 
   return (
     <div>
       <main>
-        <Board nuOfRows={nuOfRows} nuOfCols={nuOfCols} memeArray={memeArray}>
-          {[...Array(numOfShips)].map((val, index) =>   <Ship 
-            nuOfRows={nuOfRows} 
-            nuOfCols={nuOfCols} 
-            turn={whichShip === index ? {val:turn} : {val: null}} 
-            index={index} 
-          /> )}
-        </Board>
+        <div className='flex'>
+          <Board nuOfRows={nuOfRows} nuOfCols={nuOfCols} memeArray={memeArray}>
+            {[...Array(numOfShips)].map((val, index) =>   <Ship 
+              position = { position[index] }
+              index={index} 
+            /> )}
+          </Board>
+          <div className='flex items-center  h-[150px] ml-8 mt-12'>
+            <div>
+              {Object.values(position).map((pos, index) => {
+                if(pos===64) {
+                  return (
+                    <div className='flex items-center  h-[150px]'>
+                      <span className="mx-6 bold text-xl">Player</span>
 
-        <button onClick={() => {
-          //console.log(whichShip)
+                      <div style={{ 
+                            backgroundImage: `url(${ships[index]})`,
+                            backgroundPosition: 'center',
+                            backgroundSize: 'cover',
+                            backgroundRepeat: 'no-repeat',
+                            width: '100px', 
+                            height: '100px' 
+                      }} />
 
-          if(rules.current[whichShip]) {
-            console.log(rules.current[whichShip]);
-            
-            switch(rules.current[whichShip]) {
-              case 'SKIP_NEXT_TURN':
-                console.log('skipping');
-                executeTurn(0);
-                updateShip();
-                break
-              case 'EXTRA_TURN':
-                executeTurn();
-                updateShip();
-                break;
-              case 'NEXT_TURN_6':
-                executeTurn(6);
-                updateShip();
-                break;
-              case 'NEXT_TURN_1':
-                executeTurn(1);
-                updateShip();
-                break;
-              case 'SKIP_NEXT_2_TURN':
-                updateShip();
-                break;
-              // case 'NEED_6':
-              //   for (let key of Object.keys(rules.current)) {
-              //     rules.current[key] = 'EXTRA_TURN';
-              //   }
-              //   rules.current = {...rules.current, [key]: 'SKIP_NEXT_TURN'};
-              //   break;
-              // case 'NO_1':
-              //   for (let key of Object.keys(rules.current)) {
-              //     rules.current[key] = 'SKIP_NEXT_TURN';
-              //   }
-              //   rules.current = {...rules.current, [key]: 'EXTRA_TURN'};
-              //   break;
-              default:
-            };
+                      <span className="mx-6 bold text-xl">has completed</span>
+                    </div>
+                  )
+                } else {
+                  return <></>
+                }
+              })}
+            </div>
+          </div>
+        </div>
 
-            rules.current[whichShip] = null;
-          } else {
-            executeTurn();
-            updateShip();
-          }
-       
-        }}>here</button>
-        <span>{turn}</span>
+        <div className='pt-6 pl-6'>
+          <div className='flex items-center h-[150px]'>
+            <span className="mx-6 bold text-xl">Next Player</span>
+
+            <div style={{ 
+                  backgroundImage: `url(${ships[whichShip]})`,
+                  backgroundPosition: 'center',
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                  width: '100px', 
+                  height: '100px' 
+            }} />
+
+            <button className="ml-6 bg-blue-500 h-[50px] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
+              // get the turn
+              // update the position of the ship
+              executeTurn();
+              updateShip();
+
+            }}>Click here to Roll</button>
+            <span className='mx-6 bold text-3xl'>{turnValue}</span>
+          </div>
+        </div>
       </main>  
     </div>
   )

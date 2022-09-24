@@ -1,4 +1,5 @@
 import React from 'react';
+import { getrandomNumber } from '../helpers/randomNumberHelper';
 
 import space from '../assets/space.png';
 import one from '../assets/memes/1.jpg';
@@ -15,6 +16,21 @@ import eleven from '../assets/memes/11.jpg';
 import tweleve from '../assets/memes/12.jpg';
 
 const memes = [one, two, three, four, five, six, seven, eight, nine, ten, eleven, tweleve];
+
+export const memeZoneGenerator = (nuOfRows, nuOfCols) => {
+    const min = 2;
+    const max = nuOfRows * nuOfCols - 1;
+    const memeZones = [];
+
+    do {
+      let rand = getrandomNumber(min, max);
+      if(memeZones.indexOf(rand)===-1) {
+        memeZones.push(rand)
+      }
+    } while (memeZones.length < 12);
+
+    return memeZones;
+}
 
 const Board = React.memo(function({nuOfRows, nuOfCols, memeArray,  children}) {
 
